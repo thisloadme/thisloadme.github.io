@@ -1,0 +1,34 @@
+@media only screen and (max-width: 600px) {
+	.bgimage {
+		background-size: cover;
+	}
+
+	.main-container {
+		margin: 0px auto;
+	}
+
+	.kolom2 {
+		width: 100%;
+	}
+
+	.kolom3 {
+		width: 100%;
+	}
+
+	.kolom4 {
+		width: 100%;
+	}
+
+	.foto-diri {
+		margin: 0% 0%;
+		width: 230px!important;
+	}
+
+	.center-margin {
+		display: unset;
+	}
+
+	footer {
+		padding: 3vh 0px;
+	}
+}
