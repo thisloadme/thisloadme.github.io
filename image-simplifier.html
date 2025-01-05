@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>K Means Clustering</title>
+</head>
+
+<body>
+    <h1>Image Simple Coloring</h1>
+
+    <div>
+        <form id="clustering-form">
+            Image File : <input type="file" id="file-image" accept="image/jpeg, image/png">
+            <br>
+            <small>(length * width size must not exceed 44000)</small>
+            <br>
+            <br>
+            Number of colors : <input type="number" id="k-value" name="k_value">
+            <br>
+            <input type="button" value="proses" onclick="doClustering()">
+            <br><br>
+            <p>Original Image</p>
+            <img id="original-image" src="" alt="image">
+            <p>Result Image</p>
+            <canvas id="result-canvas"></canvas>
+        </form>
+    </div>
+
+    <script>
+        class KMeans {
+            constructor(k) {
+                this.iterasi = 100;
+                this.kluster = k;
+                this.nElemen = 0;
+                this.centroids = [];
+            }
+
+            inisialisasiCentroid(vectors) {
+                const centroids = [];
+                for (let c = 0; c < this.kluster; c++) {
+                    const randIdx = Math.floor(Math.random() * vectors.length);
+                    centroids.push(vectors[randIdx]);
+                    this.nElemen = vectors[randIdx].length;
+                }
+                return centroids;
+            }
+
+            hitungJarak(vectors, centroids) {
+                return vectors.map(vector => {
+                    return centroids.map(centroid => {
+                        let sum = 0;
+                        for (let i = 0; i < this.nElemen; i++) {
+                            sum += Math.pow(vector[i] - centroid[i], 2);
+                        }
+                        return Math.sqrt(sum);
+                    });
+                });
+            }
+
+            indexJarakTerdekat(jarak) {
+                return jarak.map(jar => jar.indexOf(Math.min(...jar)));
+            }
+
+            hitungCentroidBaru(vectors, indexLabel) {
+                const centroids = Array.from({ length: this.kluster }, () => Array(this.nElemen).fill(0));
+                const count = Array(this.kluster).fill(0);
+
+                vectors.forEach((vector, idx) => {
+                    const label = indexLabel[idx];
+                    vector.forEach((value, i) => {
+                        centroids[label][i] += value;
+                    });
+                    count[label]++;
+                });
+
+                return centroids.map((centroid, i) => centroid.map(value => value / count[i]));
+            }
+
+            getNewVectors(x) {
+                this.centroids = this.inisialisasiCentroid(x);
+                for (let iter = 0; iter < this.iterasi; iter++) {
+                    const centroidLama = this.centroids;
+                    const jarak = this.hitungJarak(x, centroidLama);
+                    const indexLabel = this.indexJarakTerdekat(jarak);
+                    this.centroids = this.hitungCentroidBaru(x, indexLabel);
+                    if (JSON.stringify(this.centroids) === JSON.stringify(centroidLama) && iter > 50) {
+                        break;
+                    }
+                }
+
+                return this.indexJarakTerdekat(this.hitungJarak(x, this.centroids)).map(idx => this.centroids[idx]);
+            }
+        }
+
+        function getColourVector(imgData) {
+            const vectors = [];
+            for (let i = 0; i < imgData.data.length; i += 4) {
+                vectors.push([imgData.data[i], imgData.data[i + 1], imgData.data[i + 2]]);
+            }
+            return vectors;
+        }
+
+        function createNewImage(canvas, newVectors, width, height) {
+            const ctx = canvas.getContext('2d');
+            const imageData = ctx.createImageData(width, height);
+
+            newVectors.forEach((vec, idx) => {
+                const offset = idx * 4;
+                imageData.data[offset] = vec[0];
+                imageData.data[offset + 1] = vec[1];
+                imageData.data[offset + 2] = vec[2];
+                imageData.data[offset + 3] = 255; // alpha channel
+            });
+
+            ctx.putImageData(imageData, 0, 0);
+        }
+
+        function doClustering() {
+            const fileInput = document.getElementById('file-image');
+            const kValue = Number(document.getElementById('k-value').value);
+
+            if (!fileInput.files.length) {
+                alert('Please upload an image.');
+                return;
+            }
+
+            const imgFile = fileInput.files[0];
+            const img = new Image();
+            img.src = URL.createObjectURL(imgFile);
+
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+
+                const imgData = ctx.getImageData(0, 0, img.width, img.height);
+                const vectors = getColourVector(imgData);
+
+                const kMeans = new KMeans(kValue);
+                const newVectors = kMeans.getNewVectors(vectors);
+
+                const resultCanvas = document.getElementById('result-canvas');
+                resultCanvas.width = img.width;
+                resultCanvas.height = img.height;
+                createNewImage(resultCanvas, newVectors, img.width, img.height);
+
+                document.getElementById('original-image').src = img.src;
+            };
+        }
+    </script>
+</body>
+
+</html>
