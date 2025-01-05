@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Linear Regression</title>
+</head>
+
+<body>
+    <h1>Prediksi Penjualan Warung Paijo</h1>
+
+    <div>
+        <form id="prediction-form">
+            hari ke 1 : <input type="number" name="nominal" value="">
+            <br>
+            hari ke 2 : <input type="number" name="nominal" value="">
+            <br>
+            hari ke 3 : <input type="number" name="nominal" value="">
+            <br>
+            hari ke 4 : <input type="number" name="nominal" value="">
+            <br>
+            hari ke 5 : <input type="number" name="nominal" value="">
+            <br>
+            hari ke 6 : <input type="number" name="nominal" value="">
+            <br>
+            hari ke 7 : <input type="number" name="nominal" value="">
+            <br>
+            hari ke 8 : <input type="number" name="nominal" value="">
+            <br>
+            hari ke 9 : <input type="number" name="nominal" value="">
+            <br>
+            hari ke 10 : <input type="number" name="nominal" value="">
+            <br>
+            <br>
+            prediksi hari ke <input type="number" id="hari-diprediksi" name="hariDiprediksi" value=""> : <b
+                id="result"></b>
+            <br>
+            <input type="button" value="prediksi" onclick="doPrediction()">
+        </form>
+    </div>
+
+    <script>
+        class LN {
+            constructor() {
+                this.iter = 10;
+                this.lr = 0.1;
+                this.weight = 0;
+                this.bias = 0;
+                this.nilaiSampelTertinggi = 0;
+            }
+
+            train(arrayNominal) {
+                const x = Object.keys(arrayNominal).map(Number);
+                this.nilaiSampelTertinggi = Math.max(...x);
+                const xNorm = x.map(item => (item + 1) / (this.nilaiSampelTertinggi + 1));
+                const y = Object.values(arrayNominal);
+                const jumlahSampel = x.length;
+
+                for (let i = 0; i < this.iter; i++) {
+                    const prediksi = xNorm.map(item => (this.weight * item) + this.bias);
+                    const selisihPrediksiDanNilaiAsli = y.map((y_, idx) => prediksi[idx] - y_);
+
+                    const koefisienWeight = xNorm.reduce((sum, x_, idx) => sum + x_ * selisihPrediksiDanNilaiAsli[idx], 0) / jumlahSampel;
+                    this.weight -= this.lr * koefisienWeight;
+
+                    const koefisienBias = selisihPrediksiDanNilaiAsli.reduce((sum, s) => sum + s, 0) / jumlahSampel;
+                    this.bias -= this.lr * koefisienBias;
+                }
+            }
+
+            doPrediksi(hariKe) {
+                const item = (hariKe + 1) / (this.nilaiSampelTertinggi + 1);
+                return (this.weight * item) + this.bias;
+            }
+        }
+
+        function doPrediction() {
+            const form = document.getElementById('prediction-form');
+            const formData = new FormData(form);
+            const nominal = formData.getAll('nominal').map(Number);
+            const hariDiprediksi = Number(document.getElementById('hari-diprediksi').value);
+
+            const arrayNominal = {};
+            nominal.forEach((nom, idx) => arrayNominal[idx] = nom);
+
+            const ln = new LN();
+            ln.train(arrayNominal);
+            const prediksi = ln.doPrediksi(hariDiprediksi);
+
+            document.getElementById('result').innerText = prediksi.toFixed(2);
+        }
+    </script>
+</body>
+
+</html>
